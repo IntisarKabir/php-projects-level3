@@ -1,0 +1,241 @@
+
+
+
+
+
+
+
+// dynamic-multi-level-dropdown-sticky-menu
+
+
+
+
+
+
+
+
+
+
+
+Insert bellow inside the head tag:
+<!--For Plugins css-->
+<link rel="stylesheet" href="assets/css/bootstrap.min.css">
+<link rel="stylesheet" href="assets/css/font-awesome.min.css">
+<link rel="stylesheet" href="assets/css/animate.css">
+<link rel="stylesheet" href="assets/css/sina-nav.css">
+
+<!-- paste bellow link above body closing tag -->
+assets/js/jquery.min.js
+assets/js/bootstrap.min.js
+assets/js/wow.min.js
+assets/js/sina-nav.js
+
+
+
+
+How to create multilevel dynamic dropdown navigation/menu 
+It is very simple, Just follow the below simple steps
+
+Step 01: Create a Database and table
+Step 02: Create connection file connection.php
+step 03: Create an index.php page with a navigation
+step 04: Create function.php for menu creating
+
+
+
+
+
+CREATE TABLE `menus` (
+  `id` int(11) NOT NULL AUTO_INCREMENT,
+  `label` varchar(50) NOT NULL,
+  `link` varchar(100) NOT NULL,
+  `parent` int(11) NOT NULL DEFAULT 0,
+  `sort` int(11) DEFAULT NULL
+) ENGINE=InnoDB DEFAULT CHARSET=latin1;
+
+--
+-- Dumping data for table `menus`
+--
+
+INSERT INTO `menus` (`id`, `label`, `link`, `parent`, `sort`) VALUES
+(1, 'PHP', '#', 0, 1),
+(2, 'Tutorials', '#', 1, 2),
+(3, 'Scripts', '#', 1, NULL),
+(4, 'Arrays', '#', 2, NULL),
+(5, 'Operators', '#', 2, NULL),
+(6, 'Arithmetic operators', '#', 5, NULL),
+(7, 'Assignment operators', '$', 5, NULL),
+(8, 'Java', '#', 0, 3),
+(9, 'Tutorials', '', 8, NULL),
+(10, 'Programs', '', 8, NULL),
+(11, 'JavaScript', '#', 0, 4),
+(12, 'Contact', '#', 0, 10),
+(13, 'CSS', '', 0, 9),
+(14, 'Tutorials', '', 13, NULL),
+(15, 'Servlet', '', 9, NULL),
+(16, 'JSP', '', 9, NULL);
+
+
+
+
+
+
+Step 02: Create connection file connection.php
+
+<?php
+$db_host = 'localhost';
+$db_user = "root";
+$db_pass = "";
+$db_name = "std_bootstrap_sticky_navbar";
+$conn = mysqli_connect($db_host, $db_user, $db_pass, $db_name);
+
+if ($conn) {
+    //echo 'connected';
+}
+
+
+
+
+Step 03: Create an index.php page with a navigation
+
+
+
+
+
+
+
+<nav class="sina-nav mobile-sidebar navbar-fixed" data-top="0">
+    <div class="container">
+
+        <div class="sina-nav-header">
+            <button type="button" class="navbar-toggle" data-toggle="collapse" data-target="#navbar-menu">
+                <i class="fa fa-bars"></i>
+            </button>
+            <a class="sina-brand" href="#">
+                <h2>
+                    Brand logo
+                </h2>
+                <p>Learn Something New</p>
+            </a>
+        </div><!-- .sina-nav-header -->
+
+
+
+        <!-- Collect the nav links, forms, and other content for toggling -->
+        <div class="collapse navbar-collapse" id="navbar-menu">
+            <ul class="sina-menu sina-menu-right" data-in="fadeInLeft" data-out="fadeInOut">
+                <?php echo createMenu(0, $menus); ?>
+            </ul>
+        </div><!-- /.navbar-collapse -->
+    </div><!-- .container -->
+</nav>
+<div class="container" style="padding-top: 100px; padding-bottom:400px;">
+    <div class="row">
+        <div class="col-12 py-4">
+            <h1>Page scroll content</h1>
+            Lorem ipsum dolor sit amet, consectetur adipiscing elit.
+            Praesent tincidunt dolor eget lorem blandit, auctor
+            porttitor enim faucibus. Mauris sed elit sollicitudin,
+            aliquam lorem nec, suscipit ex. Sed mollis rhoncus
+            scelerisque. Morbi varius a est sed luctus. Morbi sapien
+            velit, venenatis a sapien vitae, commodo rutrum erat.
+            Nam volutpat diam ac convallis egestas. Nunc convallis
+            tempor hendrerit. Aenean turpis quam, viverra eu eros
+            quis, ornare tristique velit.
+        </div>
+    </div>
+</div>
+
+
+
+
+
+Step 04: Create function.php for menu creating
+
+
+
+
+
+<?php
+include_once("connection.php");
+$query = "SELECT id, label, link, parent FROM menus ORDER BY  sort ASC, label";
+$result = mysqli_query($conn, $query) or die("database error:" . mysqli_error($conn));
+// Create an array to conatin a list of items and parents
+$menus = array(
+    'items' => array(),
+    'parents' => array()
+);
+// Builds the array lists with data from the SQL result
+while ($items = mysqli_fetch_assoc($result)) {
+    // Create current menus item id into array
+    $menus['items'][$items['id']] = $items;
+    // Creates list of all items with children
+    $menus['parents'][$items['parent']][] = $items['id'];
+
+    //echo  $items;
+}
+
+// function to create dynamic treeview menus
+function createMenu($parent, $menu)
+{
+    $html = "";
+    if (isset($menu['parents'][$parent])) {
+        // $html .= '<ul class="sina-menu sina-menu-right" data-in="fadeInLeft" data-out="fadeInOut">';
+        foreach ($menu['parents'][$parent] as $itemId) {
+            if (!isset($menu['parents'][$itemId])) {
+                $html .= "<li >
+                         <a  href='" . $menu['items'][$itemId]['link'] . "'>" . $menu['items'][$itemId]['label'] . "</a>
+                     </li>";
+            }
+            if (isset($menu['parents'][$itemId])) {
+                $html .= "<li class='dropdown'>
+                  <a class='dropdown-toggle' data-toggle='dropdown' href='" . $menu['items'][$itemId]['link'] . "'>" . $menu['items'][$itemId]['label'] .  "</a>";
+                $html .= '<ul class="dropdown-menu">';
+                $html .= createMenu($itemId, $menu);
+                $html .= '</ul>';
+
+                $html .= "</li>";
+            }
+        }
+        // $html .= "</ul>";
+    }
+    return $html;
+}
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
